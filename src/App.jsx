@@ -3,10 +3,10 @@ import {
   User, Briefcase, GraduationCap, Award, Mail, MapPin,
   Code, Menu, X, CheckCircle2, Star, Building2, ChevronRight,
   Settings, Download, Globe, Github, Linkedin, Layers,
-  Loader2, FileText, ExternalLink, Eye, EyeOff
+  Loader2, FileText, ExternalLink
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
-import { useInView, usePageSnap } from './hooks/useInView';
+import { useInView } from './hooks/useInView';
 
 // ─── Security helpers ─────────────────────────────────────────────────
 function sanitizeHtml(raw) {
@@ -203,9 +203,6 @@ export default function App() {
     show_certifications:true, show_skills:true,
   });
 
-  // Enable page snapping
-  usePageSnap();
-
   useEffect(() => {
     (async () => {
       const [hero, about, exp, ach, proj, edu, cert, skills, sett] = await Promise.all([
@@ -295,7 +292,6 @@ export default function App() {
             <div className="hidden md:flex items-center gap-2">
               {hero?.github_url && <a href={safeUrl(hero.github_url)||'#'} target="_blank" rel="noreferrer" className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-all"><Github size={16}/></a>}
               {hero?.linkedin_url && <a href={safeUrl(hero.linkedin_url)||'#'} target="_blank" rel="noreferrer" className="w-9 h-9 rounded-xl bg-blue-50 hover:bg-blue-100 flex items-center justify-center text-blue-600 transition-all"><Linkedin size={16}/></a>}
-              <CVDownloadButton sm/>
             </div>
             <button className="lg:hidden w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600" onClick={() => setMenuOpen(o=>!o)}>
               {menuOpen ? <X size={18}/> : <Menu size={18}/>}
@@ -314,7 +310,6 @@ export default function App() {
               <div className="flex items-center gap-2 px-3 pt-3 pb-1 border-t border-slate-100 mt-1">
                 {hero?.github_url && <a href={safeUrl(hero.github_url)||'#'} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-sm text-slate-600"><Github size={15}/> GitHub</a>}
                 {hero?.linkedin_url && <a href={safeUrl(hero.linkedin_url)||'#'} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-sm text-blue-600"><Linkedin size={15}/> LinkedIn</a>}
-                <div className="ml-auto"><CVDownloadButton sm/></div>
               </div>
             </div>
           </div>
@@ -353,14 +348,11 @@ export default function App() {
                     <a href={`mailto:${hero?.email}`} className="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm flex items-center gap-2 border border-slate-200 shadow-sm transition-all hover:-translate-y-0.5">
                       <Mail size={16}/> Hubungi Saya
                     </a>
-                    <CVDownloadButton/>
                   </div>
                 </Reveal>
                 <Reveal variant="fade-up" delay={400}>
                   <div className="flex flex-wrap items-center gap-5 text-sm text-slate-500 justify-center md:justify-start">
                     {hero?.location && <span className="flex items-center gap-1.5"><MapPin size={14} className="text-blue-500"/> {hero.location}</span>}
-                    {hero?.github_url && <a href={safeUrl(hero.github_url)||'#'} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-slate-800 transition-colors"><Github size={14}/> GitHub</a>}
-                    {hero?.linkedin_url && <a href={safeUrl(hero.linkedin_url)||'#'} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 transition-colors"><Linkedin size={14}/> LinkedIn</a>}
                   </div>
                 </Reveal>
               </>
@@ -676,7 +668,6 @@ export default function App() {
               <a href={`mailto:${hero?.email}`} className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white text-blue-700 font-bold text-base hover:bg-blue-50 hover:scale-105 transition-all shadow-xl">
                 <Mail size={18}/> Hubungi via Email
               </a>
-              <CVDownloadButton/>
             </div>
           </Reveal>
         </div>
@@ -691,8 +682,6 @@ export default function App() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {hero?.email && <a href={`mailto:${hero.email}`} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-sm font-medium transition-all"><Mail size={14} className="text-blue-400"/> {hero.email}</a>}
-            {hero?.github_url && <a href={safeUrl(hero.github_url)||'#'} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-sm font-medium transition-all"><Github size={14}/> GitHub</a>}
-            {hero?.linkedin_url && <a href={safeUrl(hero.linkedin_url)||'#'} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-sm font-medium transition-all"><Linkedin size={14} className="text-blue-400"/> LinkedIn</a>}
           </div>
         </div>
       </footer>
