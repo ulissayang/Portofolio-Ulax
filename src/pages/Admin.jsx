@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   LayoutDashboard, User, Briefcase, GraduationCap, Award,
   Settings, LogOut, Plus, Pencil, Trash2, Save, X,
-  CheckCircle2, AlertCircle, ChevronUp, ChevronDown, Eye,
+  CheckCircle2, AlertCircle, ChevronUp, ChevronDown, Eye, EyeOff,
   Lock, Camera, Sparkles, FileText, Star, Menu,
   ImageIcon, Loader2, ExternalLink, Globe, Upload, Link2,
-  Layers, Github, Linkedin, Download, KeyRound, ShieldCheck, Eye, EyeOff
+  Layers, Github, Linkedin, Download, KeyRound, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ProjectSection from './ProjectSection';
