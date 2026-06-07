@@ -486,53 +486,6 @@ function ListSection({ title, icon, color, table, emptyForm, renderRow, renderFo
   // Paginate
   const pageItems = items.slice((page-1)*perPage, page*perPage);
 
-
-  const [items, setItems] = useState([]);
-  const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(null);
-  const [confirm, setConfirm] = useState(null);
-
-  const load = useCallback(async () => {
-    const { data } = await supabase.from(table).select('*').order(orderField);
-    setItems(data || []);
-  }, [table, orderField]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const startEdit = (item) => { setEditId(item.id); setForm({ ...item }); };
-  const cancelEdit = () => { setEditId(null); setForm(emptyForm); };
-
-  const save = async () => {
-    setSaving(true);
-    const payload = { ...form }; delete payload.id; delete payload.created_at;
-    if (!payload[orderField]) payload[orderField] = items.length + 1;
-    const { error } = editId && editId !== 'new'
-      ? await supabase.from(table).update(payload).eq('id', editId)
-      : await supabase.from(table).insert(payload);
-    if (error) toast('Gagal: ' + error.message, 'error');
-    else { toast('Berhasil disimpan!', 'success'); load(); cancelEdit(); }
-    setSaving(false);
-  };
-
-  const remove = async (id) => {
-    setDeleting(id);
-    const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) toast('Gagal hapus: ' + error.message, 'error');
-    else { toast('Data dihapus!', 'success'); load(); }
-    setDeleting(null); setConfirm(null);
-  };
-
-  const move = async (idx, dir) => {
-    const newItems = [...items];
-    const target = idx + dir;
-    if (target < 0 || target >= newItems.length) return;
-    [newItems[idx], newItems[target]] = [newItems[target], newItems[idx]];
-    await Promise.all(newItems.map((item, i) => supabase.from(table).update({ [orderField]: i + 1 }).eq('id', item.id)));
-    load();
-  };
-
   return (
     <div>
       {confirm && <ConfirmDialog msg="Data yang dihapus tidak bisa dikembalikan." onConfirm={() => remove(confirm)} onCancel={() => setConfirm(null)}/>}
