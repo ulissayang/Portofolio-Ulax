@@ -5,7 +5,7 @@ import {
   CheckCircle2, AlertCircle, ChevronUp, ChevronDown, Eye,
   Lock, Camera, Sparkles, FileText, Star, Menu,
   ImageIcon, Loader2, ExternalLink, Globe, Upload, Link2,
-  Layers, Github, Linkedin, Download, KeyRound, ShieldCheck, Eye, EyeOff
+  Layers, Github, Linkedin, Download, KeyRound, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ProjectSection from './ProjectSection';
@@ -27,46 +27,6 @@ function Field({ label, hint, children }) {
       {children}
       {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
     </div>
-  );
-}
-
-
-// ─── Pagination ───────────────────────────────────────────────────────
-function Pagination({ total, page, perPage, onChange }) {
-  const totalPages = Math.ceil(total / perPage);
-  if (totalPages <= 1) return null;
-  const pages = Array.from({length: totalPages}, (_, i) => i + 1);
-  return (
-    <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-4">
-      <p className="text-xs text-slate-400 font-medium">
-        Menampilkan {Math.min((page-1)*perPage+1, total)}–{Math.min(page*perPage, total)} dari {total} data
-      </p>
-      <div className="flex items-center gap-1">
-        <button onClick={() => onChange(page-1)} disabled={page<=1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 disabled:opacity-30 transition-colors text-sm font-bold">‹</button>
-        {pages.map(p => (
-          <button key={p} onClick={() => onChange(p)}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${p===page ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}>
-            {p}
-          </button>
-        ))}
-        <button onClick={() => onChange(page+1)} disabled={page>=totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 disabled:opacity-30 transition-colors text-sm font-bold">›</button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Visibility Toggle ────────────────────────────────────────────────
-function VisibilityToggle({ visible, onToggle, loading = false }) {
-  return (
-    <button onClick={onToggle} disabled={loading}
-      title={visible ? 'Klik untuk sembunyikan' : 'Klik untuk tampilkan'}
-      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0 ${
-        visible ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-      }`}>
-      {loading ? <Loader2 size={13} className="animate-spin"/> : visible ? <Eye size={14}/> : <EyeOff size={14}/>}
-    </button>
   );
 }
 
@@ -419,74 +379,7 @@ function AboutSection({ toast }) {
 }
 
 // ─── Generic List Section ─────────────────────────────────────────────
-function ListSection({ title, icon, color, table, emptyForm, renderRow, renderForm, orderField = 'sort_order', toast, perPage = 8 }) {
-  const [items, setItems] = useState([]);
-  const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(null);
-  const [confirm, setConfirm] = useState(null);
-  const [page, setPage] = useState(1);
-  const [togglingId, setTogglingId] = useState(null);
-
-  const load = useCallback(async () => {
-    const { data } = await supabase.from(table).select('*').order(orderField);
-    setItems(data || []);
-    setPage(1);
-  }, [table, orderField]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const startEdit = (item) => { setEditId(item.id); setForm({ ...item }); };
-  const cancelEdit = () => { setEditId(null); setForm(emptyForm); };
-
-  const save = async () => {
-    setSaving(true);
-    const payload = { ...form }; delete payload.id; delete payload.created_at;
-    if (!payload[orderField]) payload[orderField] = items.length + 1;
-    // Set visible default true jika belum ada
-    if (payload.visible === undefined) payload.visible = true;
-    const { error } = editId && editId !== 'new'
-      ? await supabase.from(table).update(payload).eq('id', editId)
-      : await supabase.from(table).insert(payload);
-    if (error) toast('Gagal: ' + error.message, 'error');
-    else { toast('Berhasil disimpan!', 'success'); load(); cancelEdit(); }
-    setSaving(false);
-  };
-
-  const remove = async (id) => {
-    setDeleting(id);
-    const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) toast('Gagal hapus: ' + error.message, 'error');
-    else { toast('Data dihapus!', 'success'); load(); }
-    setDeleting(null); setConfirm(null);
-  };
-
-  const toggleVisible = async (item) => {
-    setTogglingId(item.id);
-    const { error } = await supabase.from(table).update({ visible: !item.visible }).eq('id', item.id);
-    if (error) toast('Gagal: ' + error.message, 'error');
-    else {
-      toast(!item.visible ? 'Ditampilkan di portfolio' : 'Disembunyikan dari portfolio', 'success');
-      setItems(prev => prev.map(i => i.id === item.id ? {...i, visible: !i.visible} : i));
-    }
-    setTogglingId(null);
-  };
-
-  const move = async (idx, dir) => {
-    const globalIdx = (page - 1) * perPage + idx;
-    const newItems = [...items];
-    const target = globalIdx + dir;
-    if (target < 0 || target >= newItems.length) return;
-    [newItems[globalIdx], newItems[target]] = [newItems[target], newItems[globalIdx]];
-    await Promise.all(newItems.map((item, i) => supabase.from(table).update({ [orderField]: i + 1 }).eq('id', item.id)));
-    load();
-  };
-
-  // Paginate
-  const pageItems = items.slice((page-1)*perPage, page*perPage);
-
-
+function ListSection({ title, icon, color, table, emptyForm, renderRow, renderForm, orderField = 'sort_order', toast }) {
   const [items, setItems] = useState([]);
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -560,14 +453,6 @@ function ListSection({ title, icon, color, table, emptyForm, renderRow, renderFo
           </button>
         )}
 
-        {/* Info badge visibility */}
-        {items.length > 0 && (
-          <div className="flex items-center gap-2 mb-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-            <Eye size={13} className="text-emerald-500 shrink-0"/>
-            <p className="text-xs text-slate-500"><span className="font-semibold text-emerald-600">{items.filter(i=>i.visible!==false).length}</span> tampil · <span className="font-semibold text-slate-400">{items.filter(i=>i.visible===false).length}</span> tersembunyi · Klik ikon mata untuk toggle</p>
-          </div>
-        )}
-
         <div className="space-y-2">
           {items.length === 0 && editId === null && (
             <div className="text-center py-10 text-slate-400">
@@ -575,28 +460,20 @@ function ListSection({ title, icon, color, table, emptyForm, renderRow, renderFo
               <p className="font-medium text-sm">Belum ada data</p>
             </div>
           )}
-          {pageItems.map((item, idx) => (
-            <div key={item.id} className={`group bg-white border-2 rounded-2xl p-4 flex items-center gap-3 transition-all hover:shadow-sm ${
-              item.visible === false ? 'opacity-60 border-slate-100' : editId === item.id ? 'border-blue-300' : 'border-slate-100 hover:border-blue-200'
-            }`}>
+          {items.map((item, idx) => (
+            <div key={item.id} className={`group bg-white border-2 rounded-2xl p-4 flex items-center gap-3 transition-all hover:border-blue-200 hover:shadow-sm ${editId === item.id ? 'border-blue-300' : 'border-slate-100'}`}>
               <div className="flex flex-col gap-0.5 shrink-0">
-                <button onClick={() => move(idx, -1)} disabled={idx === 0 && page === 1} className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 disabled:opacity-30"><ChevronUp size={13}/></button>
-                <button onClick={() => move(idx, 1)} disabled={idx === pageItems.length-1 && page === Math.ceil(items.length/perPage)} className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 disabled:opacity-30"><ChevronDown size={13}/></button>
+                <button onClick={() => move(idx, -1)} disabled={idx === 0} className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 disabled:opacity-30"><ChevronUp size={13}/></button>
+                <button onClick={() => move(idx, 1)} disabled={idx === items.length - 1} className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 disabled:opacity-30"><ChevronDown size={13}/></button>
               </div>
               <div className="flex-1 min-w-0">{renderRow(item)}</div>
-              <div className="flex gap-1.5 shrink-0">
-                <VisibilityToggle
-                  visible={item.visible !== false}
-                  onToggle={() => toggleVisible(item)}
-                  loading={togglingId === item.id}
-                />
-                <button onClick={() => startEdit(item)} className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Pencil size={14}/></button>
-                <button onClick={() => setConfirm(item.id)} disabled={deleting === item.id} className="w-8 h-8 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center disabled:opacity-40 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14}/></button>
+              <div className="flex gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => startEdit(item)} className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center"><Pencil size={14}/></button>
+                <button onClick={() => setConfirm(item.id)} disabled={deleting === item.id} className="w-8 h-8 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center disabled:opacity-40"><Trash2 size={14}/></button>
               </div>
             </div>
           ))}
         </div>
-        <Pagination total={items.length} page={page} perPage={perPage} onChange={setPage}/>
       </SectionCard>
     </div>
   );
@@ -828,91 +705,6 @@ function StatsOverview() {
   );
 }
 
-
-
-// ─── Section Visibility Settings ─────────────────────────────────────
-function SectionVisibilitySection({ toast }) {
-  const SECTIONS = [
-    { key: 'show_about',          label: 'Tentang Saya',          desc: 'Bagian bio dan moto' },
-    { key: 'show_experience',     label: 'Pengalaman Kerja',      desc: 'Timeline pengalaman' },
-    { key: 'show_projects',       label: 'Proyek',                desc: 'Kartu portfolio proyek' },
-    { key: 'show_achievements',   label: 'Pencapaian',            desc: 'Bootcamp & penghargaan' },
-    { key: 'show_education',      label: 'Pendidikan',            desc: 'Riwayat pendidikan' },
-    { key: 'show_certifications', label: 'Sertifikasi & Pelatihan', desc: 'Daftar sertifikat' },
-    { key: 'show_skills',         label: 'Keterampilan',          desc: 'Skill & kompetensi' },
-  ];
-
-  const [settings, setSettings] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [toggling, setToggling] = useState(null);
-
-  useEffect(() => {
-    supabase.from('portfolio_settings').select('*').then(({ data }) => {
-      if (data) {
-        const s = {};
-        data.forEach(r => { s[r.key] = r.value === true || r.value === 'true'; });
-        setSettings(s);
-      }
-      setLoading(false);
-    });
-  }, []);
-
-  const toggle = async (key) => {
-    setToggling(key);
-    const newVal = !settings[key];
-    const { error } = await supabase.from('portfolio_settings')
-      .upsert({ key, value: newVal, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-    if (error) toast('Gagal: ' + error.message, 'error');
-    else {
-      setSettings(s => ({ ...s, [key]: newVal }));
-      toast(`${SECTIONS.find(s=>s.key===key)?.label} ${newVal ? 'ditampilkan' : 'disembunyikan'}`, 'success');
-    }
-    setToggling(null);
-  };
-
-  return (
-    <SectionCard title="Tampilan Halaman Portfolio" icon={Eye} color="teal">
-      <p className="text-slate-500 text-sm mb-5 leading-relaxed">
-        Atur section mana yang tampil di halaman portfolio publik. Toggle bisa diubah kapan saja dan langsung berlaku.
-      </p>
-      {loading ? (
-        <div className="space-y-3">{[1,2,3,4,5].map(i=><div key={i} className="h-14 bg-slate-100 animate-pulse rounded-xl"/>)}</div>
-      ) : (
-        <div className="space-y-2">
-          {SECTIONS.map(sec => {
-            const isOn = settings[sec.key] !== false;
-            return (
-              <div key={sec.key}
-                className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${isOn ? 'border-emerald-100 bg-emerald-50/50' : 'border-slate-100 bg-slate-50/50'}`}>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-slate-800 text-sm">{sec.label}</p>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isOn ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
-                      {isOn ? 'Tampil' : 'Tersembunyi'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">{sec.desc}</p>
-                </div>
-                <button onClick={() => toggle(sec.key)} disabled={toggling === sec.key}
-                  className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-all duration-200 ${
-                    isOn ? 'bg-emerald-500 border-emerald-500' : 'bg-slate-200 border-slate-200'
-                  } disabled:opacity-60`}>
-                  <span className={`inline-block w-5 h-5 transform rounded-full bg-white shadow-md transition-transform duration-200 ${isOn ? 'translate-x-5' : 'translate-x-0.5'}`}>
-                    {toggling === sec.key && <Loader2 size={10} className="animate-spin text-slate-400 m-auto mt-[3px] ml-[3px]"/>}
-                  </span>
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 flex items-start gap-2">
-        <AlertCircle size={13} className="shrink-0 mt-0.5"/>
-        <span>Perubahan langsung berlaku di halaman portfolio. Refresh halaman portfolio untuk melihat hasilnya.</span>
-      </div>
-    </SectionCard>
-  );
-}
 
 // ─── Account / Security Section ──────────────────────────────────────
 function AccountSection({ toast, session }) {
@@ -1260,7 +1052,6 @@ export default function Admin() {
     { id: 'certifications', label: 'Sertifikasi', icon: Star, desc: 'Sertifikat & file' },
     { id: 'skills', label: 'Keterampilan', icon: Settings, desc: 'Daftar skill' },
     { id: 'cv', label: 'Generate CV', icon: FileText, desc: 'Download CV otomatis' },
-    { id: 'tampilan', label: 'Tampilan Publik', icon: Eye, desc: 'Atur section yang tampil' },
     { id: 'akun', label: 'Keamanan Akun', icon: ShieldCheck, desc: 'Reset & ubah password' },
   ];
 
@@ -1275,7 +1066,6 @@ export default function Admin() {
       case 'certifications': return <CertificationSection toast={showToast}/>;
       case 'skills': return <SkillSection toast={showToast}/>;
       case 'cv': return <CVGenerator toast={showToast}/>;
-      case 'tampilan': return <SectionVisibilitySection toast={showToast}/>;
       case 'akun': return <AccountSection toast={showToast} session={session}/>;
       default: return null;
     }
